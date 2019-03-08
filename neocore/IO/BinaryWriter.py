@@ -66,7 +66,7 @@ class BinaryWriter(object):
         Create an instance.
 
         Args:
-            stream (BytesIO): a stream to operate on. i.e. a neo.IO.MemoryStream or raw BytesIO.
+            stream (BytesIO): a stream to operate on. i.e. a neocore.IO.MemoryStream or raw BytesIO.
         """
         super(BinaryWriter, self).__init__()
         self.stream = stream
@@ -304,7 +304,7 @@ class BinaryWriter(object):
     def WriteVarInt(self, value, endian="<"):
         """
         Write an integer value in a space saving way to the stream.
-        Read more about variable size encoding here: http://docs.neo.org/en-us/node/network-protocol.html#convention
+        Read more about variable size encoding here: http://docs.neocore.org/en-us/node/network-protocol.html#convention
 
         Args:
             value (int):
@@ -341,7 +341,7 @@ class BinaryWriter(object):
     def WriteVarBytes(self, value, endian="<"):
         """
         Write an integer value in a space saving way to the stream.
-        Read more about variable size encoding here: http://docs.neo.org/en-us/node/network-protocol.html#convention
+        Read more about variable size encoding here: http://docs.neocore.org/en-us/node/network-protocol.html#convention
 
         Args:
             value (bytes):
@@ -358,7 +358,7 @@ class BinaryWriter(object):
     def WriteVarString(self, value, encoding="utf-8"):
         """
         Write a string value to the stream.
-        Read more about variable size encoding here: http://docs.neo.org/en-us/node/network-protocol.html#convention
+        Read more about variable size encoding here: http://docs.neocore.org/en-us/node/network-protocol.html#convention
 
         Args:
             value (string): value to write to the stream.
@@ -398,7 +398,7 @@ class BinaryWriter(object):
         Write an array of serializable objects to the stream.
 
         Args:
-            array(list): a list of serializable objects. i.e. extending neo.IO.Mixins.SerializableMixin
+            array(list): a list of serializable objects. i.e. extending neocore.IO.Mixins.SerializableMixin
         """
         if array is None:
             self.WriteByte(0)
@@ -439,7 +439,7 @@ class BinaryWriter(object):
         Write a Fixed8 value to the stream.
 
         Args:
-            value (neo.Fixed8):
+            value (neocore.Fixed8):
             unsigned: (Not used)
 
         Returns:

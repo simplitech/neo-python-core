@@ -24,7 +24,7 @@ class BinaryReader(object):
         Create an instance.
 
         Args:
-            stream (BytesIO): a stream to operate on. i.e. a neo.IO.MemoryStream or raw BytesIO.
+            stream (BytesIO): a stream to operate on. i.e. a neocore.IO.MemoryStream or raw BytesIO.
         """
         super(BinaryReader, self).__init__()
         self.stream = stream
@@ -231,7 +231,7 @@ class BinaryReader(object):
     def ReadVarInt(self, max=sys.maxsize):
         """
         Read a variable length integer from the stream.
-        The NEO network protocol supports encoded storage for space saving. See: http://docs.neo.org/en-us/node/network-protocol.html#convention
+        The NEO network protocol supports encoded storage for space saving. See: http://docs.neocore.org/en-us/node/network-protocol.html#convention
 
         Args:
             max (int): (Optional) maximum number of bytes to read.
@@ -260,7 +260,7 @@ class BinaryReader(object):
     def ReadVarBytes(self, max=sys.maxsize):
         """
         Read a variable length of bytes from the stream.
-        The NEO network protocol supports encoded storage for space saving. See: http://docs.neo.org/en-us/node/network-protocol.html#convention
+        The NEO network protocol supports encoded storage for space saving. See: http://docs.neocore.org/en-us/node/network-protocol.html#convention
 
         Args:
             max (int): (Optional) maximum number of bytes to read.
@@ -310,7 +310,7 @@ class BinaryReader(object):
         Deserialize a stream into the object specific by `class_name`.
 
         Args:
-            class_name (str): a full path to the class to be deserialized into. e.g. 'neo.Core.Block.Block'
+            class_name (str): a full path to the class to be deserialized into. e.g. 'neocore.Core.Block.Block'
             max (int): (Optional) maximum number of bytes to read.
 
         Returns:
