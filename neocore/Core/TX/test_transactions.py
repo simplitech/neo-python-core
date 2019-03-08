@@ -191,7 +191,7 @@ class TransactionTestCase(NeoTestCase):
     giant_tx_hash = "9af1fcaab6fec80922e25dbea34c534c743dcf8d10f76af1892526c2879d3a70"
 
     def test_tx_big_remark(self):
-        path = '%s/../fixtures/bigtx.txt' % os.getcwd()
+        path = '%s/fixtures/bigtx.txt' % os.getcwd()
 
         with open(path, 'rb') as f:
             blockraw = f.read().strip()

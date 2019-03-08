@@ -251,7 +251,6 @@ class BinaryReader(object):
             value = self.ReadUInt64()
         else:
             value = fb
-
         if value > max:
             raise Exception("Invalid format")
 

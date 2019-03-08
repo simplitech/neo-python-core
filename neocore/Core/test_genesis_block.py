@@ -70,8 +70,8 @@ class GenesisBlockTestCase(VerifiableTestCase):
         miner_tx = MinerTransaction()
         miner_tx.Nonce = 2083236893
 
-        share_tx = Blockchain.GetSystemShare()
-        coin_tx = Blockchain.GetSystemCoin()
+        share_tx = Blockchain.GetSystemShare(self)
+        coin_tx = Blockchain.GetSystemCoin(self)
 
         script = Contract.CreateMultiSigRedeemScript(int(len(Blockchain.StandbyValidators()) / 2) + 1, Blockchain.StandbyValidators())
 
@@ -92,7 +92,7 @@ class GenesisBlockTestCase(VerifiableTestCase):
             self.assertEqual(issue_tx.Hash.ToBytes(), self.gen_issue_tx_id)
 
     def test_system_share(self):
-        share_tx = Blockchain.GetSystemShare()
+        share_tx = Blockchain.GetSystemShare(self)
 
         self.assertEqual(type(share_tx), RegisterTransaction)
         self.assertEqual(self.sysshareraw, share_tx.GetHashData())
@@ -101,7 +101,7 @@ class GenesisBlockTestCase(VerifiableTestCase):
 
     def test_system_coin(self):
 
-        coin_tx = Blockchain.GetSystemCoin()
+        coin_tx = Blockchain.GetSystemCoin(self)
         self.assertEqual(type(coin_tx), RegisterTransaction)
         self.assertEqual(self.syscoinraw, coin_tx.GetHashData())
         self.assertEqual(self.sys_coin_id, coin_tx.Hash.ToBytes())
@@ -109,7 +109,7 @@ class GenesisBlockTestCase(VerifiableTestCase):
 
     def test_genesis_block(self):
 
-        block = Blockchain.GetGenesis()
+        block = Blockchain.GetGenesis(self)
 
         self.assertEqual(len(block.Transactions), self.testnet_genesis_numtx)
         self.assertEqual(block.Index, self.testnet_genesis_index)
