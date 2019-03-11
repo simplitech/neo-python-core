@@ -38,7 +38,7 @@ class IssueTransaction(Transaction):
         all_neo_gas = True
         for output in self.outputs:
             from neocore.Core.Blockchain import Blockchain
-            if output.AssetId != Blockchain.GetSystemCoin().Hash and output.AssetId != Blockchain.GetSystemShare().Hash:
+            if output.AssetId != Blockchain.GetInstance().GetSystemCoin().Hash and output.AssetId != Blockchain.GetInstance().GetSystemShare().Hash:
                 all_neo_gas = False
         if all_neo_gas:
             return Fixed8.Zero()

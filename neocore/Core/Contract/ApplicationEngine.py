@@ -1,6 +1,9 @@
 import binascii
 import sys
 from collections import deque
+
+from neocore.Core.Contract import TriggerType
+from neocore.Core.Contract.CachedScriptTable import CachedScriptTable
 from neocore.Core.VM.ExecutionEngine import ExecutionEngine
 from neocore.Core.VM import OpCode, VMState
 from neocore.Core.VM.OpCode import PACK, NEWARRAY, NEWSTRUCT, SETITEM, APPEND, CALL, APPCALL, PUSHDATA4, CAT, PUSH16, TAILCALL, \
@@ -540,7 +543,6 @@ class ApplicationEngine(ExecutionEngine):
 
     @staticmethod
     def Run(script, container=None, exit_on_error=False, gas=Fixed8.Zero(), test_mode=True):
-        raise Exception("TODO")
         """
         Runs a script in a test invoke environment
 
@@ -552,43 +554,44 @@ class ApplicationEngine(ExecutionEngine):
             ApplicationEngine
         """
 
-        # from neo.Core.Blockchain import Blockchain
-        # from neo.SmartContract.StateMachine import StateMachine
-        #
-        # bc = Blockchain.Default()
-        #
-        # accounts = DBCollection(bc._db, DBPrefix.ST_Account, AccountState)
-        # assets = DBCollection(bc._db, DBPrefix.ST_Asset, AssetState)
-        # validators = DBCollection(bc._db, DBPrefix.ST_Validator, ValidatorState)
-        # contracts = DBCollection(bc._db, DBPrefix.ST_Contract, ContractState)
-        # storages = DBCollection(bc._db, DBPrefix.ST_Storage, StorageItem)
-        #
-        # script_table = CachedScriptTable(contracts)
-        # service = StateMachine(accounts, validators, assets, contracts, storages, None)
-        #
-        # engine = ApplicationEngine(
-        #     trigger_type=TriggerType.Application,
-        #     container=container,
-        #     table=script_table,
-        #     service=service,
-        #     gas=gas,
-        #     testMode=test_mode,
-        #     exit_on_error=exit_on_error
-        # )
-        #
-        # script = binascii.unhexlify(script)
-        #
-        # engine.LoadScript(script)
-        #
-        # try:
-        #     success = engine.Execute()
-        #     engine.testMode = True
-        #     service.ExecutionCompleted(engine, success)
-        # except Exception as e:
-        #     engine.testMode = True
-        #     service.ExecutionCompleted(engine, False, e)
-        #
-        # for event in service.events_to_dispatch:
-        #     events.emit(event.event_type, event)
-        #
-        # return engine
+        from neocore.Core.Blockchain import Blockchain
+        from neocore.Core.Contract.StateMachine import StateMachine
+        from neocore.EventHub import events
+
+        bc = Blockchain.GetInstance()
+
+        accounts = bc.nodeServices.dbService.getAccountsCollection()
+        assets = bc.nodeServices.dbService.getAssetsCollection()
+        validators = bc.nodeServices.dbService.getValidatorsCollection()
+        contracts = bc.nodeServices.dbService.getContractCollection()
+        storages = bc.nodeServices.dbService.getStorageCollection()
+
+        script_table = CachedScriptTable(contracts)
+        service = StateMachine(accounts, validators, assets, contracts, storages, None)
+
+        engine = ApplicationEngine(
+            trigger_type=TriggerType.Application,
+            container=container,
+            table=script_table,
+            service=service,
+            gas=gas,
+            testMode=test_mode,
+            exit_on_error=exit_on_error
+        )
+
+        script = binascii.unhexlify(script)
+
+        engine.LoadScript(script)
+
+        try:
+            success = engine.Execute()
+            engine.testMode = True
+            service.ExecutionCompleted(engine, success)
+        except Exception as e:
+            engine.testMode = True
+            service.ExecutionCompleted(engine, False, e)
+
+        for event in service.events_to_dispatch:
+            events.emit(event.event_type, event)
+
+        return engine

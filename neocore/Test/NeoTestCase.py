@@ -3,6 +3,9 @@ from unittest.case import _BaseTestCaseContext
 import logging
 import collections
 
+from neocore.logging import log_manager
+
+logger = log_manager.getLogger()
 
 class _CapturingHandler(logging.Handler):
     """
@@ -30,8 +33,7 @@ class _AssertLogHandlerContext(_BaseTestCaseContext):
         _BaseTestCaseContext.__init__(self, test_case)
         self.component_name = component_name
         self.level = level
-        #TODO
-        #self._logger = log_manager.getLogger(self.component_name)
+        self._logger = log_manager.getLogger(self.component_name)
 
     def __enter__(self):
         LOGGING_FORMAT = "%(levelname)s:%(name)s:%(message)s"

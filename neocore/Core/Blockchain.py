@@ -3,135 +3,114 @@ from itertools import groupby
 from datetime import datetime
 
 import pytz
+from events import Events
+from neocore import Settings
 
 from neocore.Core.Block import Block
-from neocore.Core.TX.Transaction import TransactionOutput
-from neocore.Core.AssetType import AssetType
-from neocore.Core.VM.OpCode import PUSHT, PUSHF
-from neocore.Cryptography.Crypto import Crypto
-from neocore.Core.TX.RegisterTransaction import RegisterTransaction
-from neocore.Core.TX.MinerTransaction import MinerTransaction
-from neocore.Core.TX.IssueTransaction import IssueTransaction
-from neocore.Core.Witness import Witness
-
-from neocore.Core.State.SpentCoinState import SpentCoin
-from neocore.Core.Contract.Contract import Contract
-from neocore.Settings import settings
 from collections import Counter
-from neocore.Fixed8 import Fixed8
-from neocore.Cryptography.ECCurve import ECDSA
-from neocore.UInt256 import UInt256
 from functools import lru_cache
+
+from neocore.Services.BlockchainService import BlockchainService, NodeService
 
 
 class Blockchain:
-    SECONDS_PER_BLOCK = 15
-
-    DECREMENT_INTERVAL = 2000000
-
-    GENERATION_AMOUNT = [8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-
-    _blockchain = None
-
-    _validators = []
-
-    _genesis_block = None
-
     _instance = None
 
-    _blockrequests = set()
+    def __init__(self, blockchainService : BlockchainService, nodeService : NodeService):
+        self.blockchainServices = blockchainService
+        self.nodeServices = nodeService
+        self.PersistCompleted = Events()
+        self.Notify = Events()
 
-    _paused = False
+    def Pause(self):
+        self.paused = True
 
-    BlockSearchTries = 0
+    def Resume(self):
+        self.paused = False
 
-    CACHELIM = 4000
-    CMISSLIM = 5
-    LOOPTIME = .1
+    def OnNotify(self, notification):
+        self.Notify.on_change(notification)
 
-    #PersistCompleted = Events()
-    #TODO
-    #Notify = Events()
+    def OnPersistCompleted(self, block):
+        self.PersistCompleted.on_change(block)
 
-    @staticmethod
-    def StandbyValidators():
-        if len(Blockchain._validators) < 1:
-            vlist = settings.STANDBY_VALIDATORS
-            for pkey in settings.STANDBY_VALIDATORS:
-                Blockchain._validators.append(ECDSA.decode_secp256r1(pkey).G)
+    def StandbyValidators(self):
+        return self.blockchainServices.StandbyValidators()
 
-        return Blockchain._validators
-
-    @staticmethod
     @lru_cache(maxsize=2)
-    def SystemShare():
-        """
-        Register AntShare.
+    def SystemShare(self):
+        return self.blockchainServices.SystemShare()
 
-        Returns:
-            RegisterTransaction:
-        """
-        amount = Fixed8.FromDecimal(sum(Blockchain.GENERATION_AMOUNT) * Blockchain.DECREMENT_INTERVAL)
-        owner = ECDSA.secp256r1().Curve.Infinity
-        admin = Crypto.ToScriptHash(PUSHT)
-        return RegisterTransaction([], [], AssetType.GoverningToken,
-                                   "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]",
-                                   amount, 0, owner, admin)
-
-    @staticmethod
     @lru_cache(maxsize=2)
-    def SystemCoin():
-        """
-        Register AntCoin
+    def SystemCoin(self):
+        return self.blockchainServices.SystemCoin()
 
-        Returns:
-            RegisterTransaction:
-        """
-        amount = Fixed8.FromDecimal(sum(Blockchain.GENERATION_AMOUNT) * Blockchain.DECREMENT_INTERVAL)
+    def GenesisBlock(self) -> Block:
+        return self.blockchainServices.GenesisBlock()
 
-        owner = ECDSA.secp256r1().Curve.Infinity
+    def GetAccountState(self, address):
+        return self.blockchainServices.GetAccountState(address)
 
-        precision = 8
-        admin = Crypto.ToScriptHash(PUSHF)
+    def GetHeaderHash(self, height):
+        return self.blockchainServices.GetHeaderHash(height)
 
-        return RegisterTransaction([], [], AssetType.UtilityToken,
-                                   "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币\"},{\"lang\":\"en\",\"name\":\"AntCoin\"}]",
-                                   amount, precision, owner, admin)
+    def GetBlockByHeight(self, height):
+        return self.blockchainServices.GetBlockByHeight(height)
+
+    def GetBlock(self, height_or_hash):
+        return self.blockchainServices.GetBlock(height_or_hash)
+
+    def GetBlockByHash(self, hash):
+        return self.blockchainServices.GetBlockByHash(hash)
+
+    def GetBlockHash(self, index):
+        return self.blockchainServices.GetBlockHash(index)
+
+    def GetSpentCoins(self, tx_hash):
+        return self.blockchainServices.GetSpentCoins(tx_hash)
+
+    def GetAssetState(self, assetId):
+        return self.blockchainServices.GetAssetState(assetId)
+
+    def GetContract(self, hash):
+        return self.blockchainServices.GetContract(hash)
+
+
+    def GetHeaderByHeight(self, height):
+        return self.blockchainServices.GetHeaderByHeight(height)
+
+    def GetConsensusAddress(self, validators):
+        return self.blockchainServices.GetConsensusAddress(validators)
+
+    def GetScript(self, script_hash):
+        return self.blockchainServices.GetContract(script_hash)
+
+    def GetStorageItem(self, storage_key):
+        return self.blockchainServices.GetContract(storage_key)
+
+    def GetSysFeeAmount(self, hash):
+        return self.blockchainServices.GetSysFeeAmount(hash)
+
+    def GetSysFeeAmountByHeight(self, height):
+        return self.blockchainServices.GetSysFeeAmountByHeight(height)
+
+    def GetTransaction(self, hash):
+        return self.blockchainServices.GetTransaction(hash)
+
+    def GetUnclaimed(self, hash):
+        return self.blockchainServices.GetUnclaimed(hash)
+
+    def GetUnspent(self, hash, index):
+        return self.blockchainServices.GetUnclaimed(hash, index)
+
+    def GetAllUnspent(self, hash):
+        return self.blockchainServices.GetAllUnspent(hash)
+
+    def GetVotes(self, transactions):
+        return self.blockchainServices.GetVotes(transactions)
 
     @staticmethod
-    def GenesisBlock() -> Block:
-        """
-        Create the GenesisBlock.
-
-        Returns:
-            BLock:
-        """
-        prev_hash = UInt256(data=bytearray(32))
-        timestamp = int(datetime(2016, 7, 15, 15, 8, 21, tzinfo=pytz.utc).timestamp())
-        index = 0
-        consensus_data = 2083236893  # Pay tribute To Bitcoin
-        next_consensus = Blockchain.GetConsensusAddress(Blockchain.StandbyValidators())
-        script = Witness(bytearray(0), bytearray(PUSHT))
-
-        mt = MinerTransaction()
-        mt.Nonce = 2083236893
-
-        output = TransactionOutput(
-            Blockchain.SystemShare().Hash,
-            Blockchain.SystemShare().Amount,
-            Crypto.ToScriptHash(Contract.CreateMultiSigRedeemScript(int(len(Blockchain.StandbyValidators()) / 2) + 1,
-                                                                    Blockchain.StandbyValidators()))
-        )
-
-        it = IssueTransaction([], [output], [], [script])
-
-        return Block(prev_hash, timestamp, index, consensus_data,
-                     next_consensus, script,
-                     [mt, Blockchain.SystemShare(), Blockchain.SystemCoin(), it],
-                     True)
-
-    @staticmethod
-    def Default() -> 'Blockchain':
+    def GetInstance() -> 'Blockchain':
         """
         Get the default registered blockchain instance.
 
@@ -139,39 +118,90 @@ class Blockchain:
             obj: Currently set to `neocore.Implementations.Blockchains.LevelDB.LevelDBBlockchain`.
         """
         if Blockchain._instance is None:
-            Blockchain._instance = Blockchain()
-            Blockchain.GenesisBlock().RebuildMerkleRoot()
+            Blockchain._instance = Blockchain(BlockchainService(Settings.settings), None)
+            Blockchain._instance.GenesisBlock().RebuildMerkleRoot()
 
         return Blockchain._instance
 
+    @staticmethod
+    def RegisterBlockchain(blockchain):
+        """
+        Register the default block chain instance.
+
+        Args:
+            blockchain: a blockchain instance. E.g. neocore.Implementations.Blockchains.LevelDB.LevelDBBlockchain
+        """
+        if Blockchain._instance is None:
+            Blockchain._instance = blockchain
+
+    @staticmethod
+    def DeregisterBlockchain():
+        # TODO
+        # Blockchain.PersistCompleted = Events()
+        # Blockchain.Notify = Events()
+        Blockchain._instance = None
+
+
+    def GetHeaderIndex(self):
+        if self.nodeServices is not None:
+            return self.nodeServices.GetHeaderIndex()
+        raise Exception("Local service not configured")
+
+    def GetHeaderBy(self, height_or_hash):
+        if self.nodeServices is not None:
+            return self.nodeServices.GetHeaderBy(height_or_hash)
+        raise Exception("Local service not configured")
+
+    def SetHeaderIndex(self, headerIndex):
+        if self.nodeServices is not None:
+            return self.nodeServices.SetHeaderIndex(headerIndex)
+        raise Exception("Local service not configured")
+
+    def PersistBlocks(self, limit=None):
+        if self.nodeServices is not None:
+            return self.nodeServices.PersistBlocks()
+        raise Exception("Local service not configured")
+
     @property
     def CurrentBlockHash(self):
-        pass
+        if self.nodeServices is not None:
+            return self.nodeServices.CurrentBlock()
+        raise Exception("Local service not configured")
 
     @property
     def CurrentHeaderHash(self):
-        pass
+        if self.nodeServices is not None:
+            return self.nodeServices.CurrentBlock()
+        raise Exception("Local service not configured")
 
     @property
     def HeaderHeight(self):
-        pass
+        if self.nodeServices is not None:
+            return self.nodeServices.HeaderHeight()
+        raise Exception("Local service not configured")
 
     @property
     def Height(self):
-        pass
+        return self.blockchainServices.Height
 
     @property
     def CurrentBlock(self):
-        pass
+        return  self.blockchainServices.CurrentBlock()
 
     def AddBlock(self, block):
-        pass
+        if self.nodeServices is not None:
+            return self.nodeServices.AddBlock(block)
+        raise Exception("Local service not configured")
 
     def AddBlockDirectly(self, block, do_persist_complete=True):
-        pass
+        if self.nodeServices is not None:
+            return self.nodeServices.AddBlockDirectly( block, do_persist_complete)
+        raise Exception("Local service not configured")
 
     def AddHeaders(self, headers):
-        pass
+        if self.nodeServices is not None:
+            return self.nodeServices.AddHeaders(headers)
+        raise Exception("Local service not configured")
 
     @property
     def BlockRequests(self):
@@ -181,197 +211,87 @@ class Blockchain:
         Returns:
             set:
         """
-        return self._blockrequests
+        if self.nodeServices is not None:
+            return self.nodeServices.BlockRequests()
+        raise Exception("Local service not configured")
+    #TODO
+    # return self._blockrequests
 
     def ResetBlockRequests(self):
-        self._blockrequests = set()
+        if self.nodeServices is not None:
+            return self.nodeServices.ResetBlockRequests(self)
+        raise Exception("Local service not configured")
 
-    @staticmethod
-    def CalculateBonusIgnoreClaimed(inputs, ignore_claimed=True):
-        unclaimed = []
+    def ShowAllAssets(self):
+        if self.nodeServices is not None:
+            self.nodeServices.ShowAllAssets()
+        raise Exception("Local service not configured")
 
-        for hash, group in groupby(inputs, lambda x: x.PrevHash):
-            claimable = Blockchain.Default().GetUnclaimed(hash)
-            if claimable is None or len(claimable) < 1:
-                if ignore_claimed:
-                    continue
-                else:
-                    raise Exception("Error calculating bonus without ignoring claimed")
+    def CalculateBonusIgnoreClaimed(self, inputs, ignore_claimed=True):
+        if self.nodeServices is not None:
+            self.nodeServices.CalculateBonusIgnoreClaimed(inputs, ignore_claimed)
+        raise Exception("Local service not configured")
 
-            for coinref in group:
-                if coinref.PrevIndex in claimable:
-                    claimed = claimable[coinref.PrevIndex]
-                    unclaimed.append(claimed)
-                else:
-                    if ignore_claimed:
-                        continue
-                    else:
-                        raise Exception("Error calculating bonus without ignoring claimed")
-
-        return Blockchain.CalculateBonusInternal(unclaimed)
-
-    @staticmethod
-    def CalculateBonus(inputs, height_end):
-        unclaimed = []
-
-        for hash, group in groupby(inputs, lambda x: x.PrevHash):
-            tx, height_start = Blockchain.Default().GetTransaction(hash)
-
-            if tx is None:
-                raise Exception("Could Not calculate bonus")
-
-            if height_start == height_end:
-                continue
-
-            for coinref in group:
-                if coinref.PrevIndex >= len(tx.outputs) or tx.outputs[coinref.PrevIndex].AssetId != Blockchain.SystemShare().Hash:
-                    raise Exception("Invalid coin reference")
-                spent_coin = SpentCoin(output=tx.outputs[coinref.PrevIndex], start_height=height_start,
-                                       end_height=height_end)
-                unclaimed.append(spent_coin)
-
-        return Blockchain.CalculateBonusInternal(unclaimed)
-
-    @staticmethod
-    def CalculateBonusInternal(unclaimed):
-        amount_claimed = Fixed8.Zero()
-
-        decInterval = Blockchain.DECREMENT_INTERVAL
-        genAmount = Blockchain.GENERATION_AMOUNT
-        genLen = len(genAmount)
-
-        for coinheight, group in groupby(unclaimed, lambda x: x.Heights):
-            amount = 0
-            ustart = int(coinheight.start / decInterval)
-
-            if ustart < genLen:
-
-                istart = coinheight.start % decInterval
-                uend = int(coinheight.end / decInterval)
-                iend = coinheight.end % decInterval
-
-                if uend >= genLen:
-                    iend = 0
-
-                if iend == 0:
-                    uend -= 1
-                    iend = decInterval
-
-                while ustart < uend:
-                    amount += (decInterval - istart) * genAmount[ustart]
-                    ustart += 1
-                    istart = 0
-
-                amount += (iend - istart) * genAmount[ustart]
-
-            endamount = Blockchain.Default().GetSysFeeAmountByHeight(coinheight.end - 1)
-            startamount = 0 if coinheight.start == 0 else Blockchain.Default().GetSysFeeAmountByHeight(
-                coinheight.start - 1)
-            amount += endamount - startamount
-
-            outputSum = 0
-
-            for spentcoin in group:
-                outputSum += spentcoin.Value.value
-
-            outputSum = outputSum / 100000000
-            outputSumFixed8 = Fixed8(int(outputSum * amount))
-            amount_claimed += outputSumFixed8
-
-        return amount_claimed
-
-    def OnNotify(self, notification):
-        self.Notify.on_change(notification)
+    def CalculateBonus(self, inputs, height_end):
+        if self.nodeServices is not None:
+            self.nodeServices.CalculateBonus(inputs, height_end)
+        raise Exception("Local service not configured")
 
     def ContainsBlock(self, hash):
-        pass
+        if self.nodeServices is not None:
+            self.nodeServices.ContainsBlock(hash)
+        raise Exception("Local service not configured")
 
     def ContainsTransaction(self, hash):
-        pass
+        if self.nodeServices is not None:
+            self.nodeServices.ContainsTransaction(hash)
+        raise Exception("Local service not configured")
 
     def ContainsUnspent(self, hash, index):
-        pass
+        if self.nodeServices is not None:
+            self.nodeServices.ContainsUnspent(hash, index)
+        raise Exception("Local service not configured")
 
     def Dispose(self):
-        pass
+        if self.nodeServices is not None:
+            self.nodeServices.Dispose()
 
     def GetStates(self, prefix, classref):
-        pass
+        if self.nodeServices is not None:
+            self.nodeServices.GetStates(hash)
+        raise Exception("Local service not configured")
 
     def GetAccountStateByIndex(self, index):
-        pass
-
-    def GetAccountState(self, address):
-        pass
-
-    def GetAssetState(self, assetId):
-        # abstract
-        pass
+        if self.nodeServices is not None:
+            self.nodeServices.GetAccountStateByIndex(index)
+        raise Exception("Local service not configured")
 
     def SearchAssetState(self, query):
-        pass
-
-    def GetHeaderHash(self, height):
-        pass
-
-    def GetBlockByHeight(self, height):
-        pass
-
-    def GetBlock(self, height_or_hash):
-        pass
-
-    def GetBlockByHash(self, hash):
-        # abstract
-        pass
-
-    def GetBlockHash(self, height):
-        # abstract
-        pass
-
-    def GetSpentCoins(self, tx_hash):
-        pass
+        if self.nodeServices is not None:
+            self.nodeServices.SearchAssetState(hash)
+        raise Exception("Local service not configured")
 
     def GetAllSpentCoins(self):
-        pass
+        if self.nodeServices is not None:
+            self.nodeServices.GetAllSpentCoins()
+        raise Exception("Local service not configured")
 
     def SearchContracts(self, query):
-        pass
+        if self.nodeServices is not None:
+            self.nodeServices.SearchContracts(query)
+        raise Exception("Local service not configured")
 
     def ShowAllContracts(self):
-        pass
-
-    def GetContract(self, hash):
-        # abstract
-        pass
+        if self.nodeServices is not None:
+            self.nodeServices.ShowAllContracts()
+        raise Exception("Local service not configured")
 
     def GetEnrollments(self):
-        # abstract
-        pass
-
-    def GetHeader(self, hash):
-        # abstract
-        pass
-
-    def GetHeaderByHeight(self, height):
-        pass
-
-    @staticmethod
-    def GettConsensusAddress(validators):
-        """
-        Get the script hash of the consensus node.
-
-        Args:
-            validators (list): of Ellipticcurve.ECPoint's
-
-        Returns:
-            UInt160:
-        """
-        vlen = len(validators)
-        script = Contract.CreateMultiSigRedeemScript(vlen - int((vlen - 1) / 3), validators)
-        return Crypto.ToScriptHash(script)
+        if self.nodeServices is not None:
+            self.nodeServices.GetEnrollments()
+        raise Exception("Local service not configured")
 
     def GetValidators(self, others):
-
         votes = Counter([len(vs.PublicKeys) for vs in self.GetVotes(others)]).items()
 
         # TODO: Sorting here may cost a lot of memory, considering whether to use other mechanisms
@@ -397,122 +317,36 @@ class Blockchain:
         raise NotImplementedError()
 
     def GetNextBlockHash(self, hash):
-        # abstract
-        pass
+        if self.nodeServices is not None:
+            self.nodeServices.GetNextBlockHash(hash)
+        raise Exception("Local service not configured")
 
-    def GetScript(self, script_hash):
-        return self.GetContract(script_hash)
-
-    def GetStorageItem(self, storage_key):
-        # abstract
-        pass
-
-    def GetSysFeeAmount(self, hash):
-        # abstract
-        pass
-
-    def GetSysFeeAmountByHeight(self, height):
-        """
-        Get the system fee for the specified block.
-
-        Args:
-            height (int): block height.
-
-        Returns:
-            int:
-        """
-        hash = self.GetBlockHash(height)
-        return self.GetSysFeeAmount(hash)
-
-    def GetTransaction(self, hash):
-        return None, 0
-
-    def GetUnclaimed(self, hash):
-        # abstract
-        pass
-
-    def GetUnspent(self, hash, index):
-        # abstract
-        pass
-
-    def GetAllUnspent(self, hash):
-        # abstract
-        pass
-
-    def GetVotes(self, transactions):
-        # abstract
-        pass
 
     def IsDoubleSpend(self, tx):
-        # abstract
-        pass
-
-    def OnPersistCompleted(self, block):
-        self.PersistCompleted.on_change(block)
+        if self.nodeServices is not None:
+            self.nodeServices.IsDoubleSpend(tx)
+        raise Exception("Local service not configured")
 
     def BlockCacheCount(self):
-        pass
-
-    def Pause(self):
-        self._paused = True
-
-    def Resume(self):
-        self._paused = False
-
-    def GetBlockchain(self):
-        from neocore.Core.Blockchain import Blockchain
-        return Blockchain.Default()
+        if self.nodeServices is not None:
+            self.nodeServices.BlockCacheCount()
+        raise Exception("Local service not configured")
 
     def GetGenesis(self):
-        from neocore.Core.Blockchain import Blockchain
-        return Blockchain.GenesisBlock()
+        return self.blockchainServices.GenesisBlock()
 
     def GetSystemCoin(self):
-        from neocore.Core.Blockchain import Blockchain
-        return Blockchain.SystemCoin()
+        return self.blockchainServices.SystemCoin()
 
     def GetSystemShare(self):
-        from neocore.Core.Blockchain import Blockchain
-        return Blockchain.SystemShare()
+        return  self.blockchainServices.SystemShare()
 
     def GetStateReader(self):
+        #TODO ?
         from neocore.Core.Contract.StateReader import StateReader
         return StateReader()
 
-    def GetConsensusAddress(validators):
+    def GetConsensusAddress(self, validators):
         from neocore.Core.Blockchain import Blockchain
-        return Blockchain.GettConsensusAddress(validators)
+        return Blockchain.GettConsensusAddress(self, validators)
 
-    @staticmethod
-    def RegisterBlockchain(blockchain):
-        """
-        Register the default block chain instance.
-
-        Args:
-            blockchain: a blockchain instance. E.g. neocore.Implementations.Blockchains.LevelDB.LevelDBBlockchain
-        """
-        if Blockchain._instance is None:
-            Blockchain._instance = blockchain
-
-    @staticmethod
-    def DeregisterBlockchain():
-        """
-        Remove the default blockchain instance.
-        """
-        Blockchain.SECONDS_PER_BLOCK = 15
-        Blockchain.DECREMENT_INTERVAL = 2000000
-        Blockchain.GENERATION_AMOUNT = [8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        Blockchain._blockchain = None
-        Blockchain._validators = []
-        Blockchain._genesis_block = None
-        Blockchain._instance = None
-        Blockchain._blockrequests = set()
-        Blockchain._paused = False
-        Blockchain.BlockSearchTries = 0
-        Blockchain.CACHELIM = 4000
-        Blockchain.CMISSLIM = 5
-        Blockchain.LOOPTIME = .1
-        #TODO
-       #Blockchain.PersistCompleted = Events()
-       #Blockchain.Notify = Events()
-        Blockchain._instance = None

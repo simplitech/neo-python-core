@@ -773,3 +773,7 @@ class ContractTransaction(Transaction):
         """
         super(ContractTransaction, self).__init__(*args, **kwargs)
         self.Type = TransactionType.ContractTransaction
+
+class TXFeeError(Exception):
+    """Provide user-friendly feedback for transaction fee errors."""
+    pass

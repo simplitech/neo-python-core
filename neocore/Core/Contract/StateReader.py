@@ -43,29 +43,33 @@ class StateReader(InteropService):
     _contracts = None
     _storages = None
 
-    # @property
-    # def Accounts(self):
-    #     if not self._accounts:
-    #         self._accounts = Blockchain.Default().GetStates(DBPrefix.ST_Account, AccountState)
-    #     return self._accounts
-    #
-    # @property
-    # def Assets(self):
-    #     if not self._assets:
-    #         self._assets = Blockchain.Default().GetStates(DBPrefix.ST_Asset, AssetState)
-    #     return self._assets
-    #
-    # @property
-    # def Contracts(self):
-    #     if not self._contracts:
-    #         self._contracts = Blockchain.Default().GetStates(DBPrefix.ST_Contract, ContractState)
-    #     return self._contracts
-    #
-    # @property
-    # def Storages(self):
-    #     if not self._storages:
-    #         self._storages = Blockchain.Default().GetStates(DBPrefix.ST_Storage, StorageItem)
-    #     return self._storages
+    @property
+    def Accounts(self):
+        if not self._accounts:
+            prefix = Blockchain.GetInstance().nodeServices.dbService.getPrefixAccount()
+            self._accounts = Blockchain.GetInstance().nodeServices.dbService.GetStates(prefix, AccountState)
+        return self._accounts
+
+    @property
+    def Assets(self):
+        if not self._assets:
+            prefix = Blockchain.GetInstance().nodeServices.dbService.getPrefixAsset()
+            self._assets = Blockchain.Default().GetStates(prefix, AssetState)
+        return self._assets
+
+    @property
+    def Contracts(self):
+        if not self._contracts:
+            prefix = Blockchain.GetInstance().nodeServices.dbService.getPrefixContract()
+            self._contracts = Blockchain.Default().GetStates(prefix, ContractState)
+        return self._contracts
+
+    @property
+    def Storages(self):
+        if not self._storages:
+            prefix = Blockchain.GetInstance().nodeServices.dbService.getPrefixStorage()
+            self._storages = Blockchain.Default().GetStates(prefix, StorageItem)
+        return self._storages
 
     @staticmethod
     def Instance():
@@ -251,7 +255,7 @@ class StateReader(InteropService):
         return False
 
     def ExecutionCompleted(self, engine, success, error=None):
-        height = Blockchain.Default().Height + 1
+        height = Blockchain.GetInstance().Height + 1
         tx_hash = None
 
         if engine.ScriptContainer:
@@ -369,7 +373,7 @@ class StateReader(InteropService):
         if settings.emit_notify_events_on_sc_execution_error:
             # emit Notify events even if the SC execution might fail.
             tx_hash = engine.ScriptContainer.Hash
-            height = Blockchain.Default().Height + 1
+            height = Blockchain.GetInstance().Height + 1
             success = None
             self.events_to_dispatch.append(NotifyEvent(SmartContractEvent.RUNTIME_NOTIFY, payload,
                                                        args.ScriptHash, height, tx_hash,
@@ -392,14 +396,14 @@ class StateReader(InteropService):
         self.events_to_dispatch.append(SmartContractEvent(SmartContractEvent.RUNTIME_LOG,
                                                           ContractParameter(ContractParameterType.String, value=message),
                                                           hash,
-                                                          Blockchain.Default().Height + 1,
+                                                          Blockchain.GetInstance().Height + 1,
                                                           tx_hash,
                                                           test_mode=engine.testMode))
 
         return True
 
     def Runtime_GetCurrentTime(self, engine: ExecutionEngine):
-        BC = Blockchain.Default()
+        BC = Blockchain.GetInstance()
         header = BC.GetHeaderByHeight(BC.Height)
         if header is None:
             header = Blockchain.GenesisBlock()
@@ -443,10 +447,10 @@ class StateReader(InteropService):
         return True
 
     def Blockchain_GetHeight(self, engine: ExecutionEngine):
-        if Blockchain.Default() is None:
+        if Blockchain.GetInstance() is None:
             engine.CurrentContext.EvaluationStack.PushT(0)
         else:
-            engine.CurrentContext.EvaluationStack.PushT(Blockchain.Default().Height)
+            engine.CurrentContext.EvaluationStack.PushT(Blockchain.GetInstance().Height)
 
         return True
 
@@ -459,9 +463,9 @@ class StateReader(InteropService):
 
             height = BigInteger.FromBytes(data)
 
-            if Blockchain.Default() is not None:
+            if Blockchain.GetInstance() is not None:
 
-                header = Blockchain.Default().GetHeaderBy(height_or_hash=height)
+                header = Blockchain.GetInstance().GetHeaderBy(height_or_hash=height)
 
             elif height == 0:
 
@@ -471,9 +475,9 @@ class StateReader(InteropService):
 
             hash = UInt256(data=data)
 
-            if Blockchain.Default() is not None:
+            if Blockchain.GetInstance() is not None:
 
-                header = Blockchain.Default().GetHeaderBy(height_or_hash=hash)
+                header = Blockchain.GetInstance().GetHeaderBy(height_or_hash=hash)
 
             elif hash == Blockchain.GenesisBlock().Hash:
 
@@ -495,9 +499,9 @@ class StateReader(InteropService):
         if len(data) <= 5:
             height = BigInteger.FromBytes(data)
 
-            if Blockchain.Default() is not None:
+            if Blockchain.GetInstance() is not None:
 
-                block = Blockchain.Default().GetBlockByHeight(height)
+                block = Blockchain.GetInstance().GetBlockByHeight(height)
 
             elif height == 0:
 
@@ -507,9 +511,9 @@ class StateReader(InteropService):
 
             hash = UInt256(data=data).ToBytes()
 
-            if Blockchain.Default() is not None:
+            if Blockchain.GetInstance() is not None:
 
-                block = Blockchain.Default().GetBlockByHash(hash=hash)
+                block = Blockchain.GetInstance().GetBlockByHash(hash=hash)
 
             elif hash == Blockchain.GenesisBlock().Hash:
 
@@ -522,8 +526,8 @@ class StateReader(InteropService):
         data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray()
         tx = None
 
-        if Blockchain.Default() is not None:
-            tx, height = Blockchain.Default().GetTransaction(UInt256(data=data))
+        if Blockchain.GetInstance() is not None:
+            tx, height = Blockchain.GetInstance().GetTransaction(UInt256(data=data))
 
         engine.CurrentContext.EvaluationStack.PushT(StackItem.FromInterface(tx))
         return True
@@ -532,8 +536,8 @@ class StateReader(InteropService):
         data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray()
         height = -1
 
-        if Blockchain.Default() is not None:
-            tx, height = Blockchain.Default().GetTransaction(UInt256(data=data))
+        if Blockchain.GetInstance() is not None:
+            tx, height = Blockchain.GetInstance().GetTransaction(UInt256(data=data))
 
         engine.CurrentContext.EvaluationStack.PushT(height)
         return True
@@ -547,7 +551,7 @@ class StateReader(InteropService):
         return True
 
     def Blockchain_GetValidators(self, engine: ExecutionEngine):
-        validators = Blockchain.Default().GetValidators()
+        validators = Blockchain.GetInstance().GetValidators()
 
         items = [StackItem(validator.encode_point(compressed=True)) for validator in validators]
 
@@ -559,7 +563,7 @@ class StateReader(InteropService):
         data = engine.CurrentContext.EvaluationStack.Pop().GetByteArray()
         asset = None
 
-        if Blockchain.Default() is not None:
+        if Blockchain.GetInstance() is not None:
             asset = self.Assets.TryGet(UInt256(data=data))
         if asset is None:
             return False
@@ -742,7 +746,7 @@ class StateReader(InteropService):
         if tx is None:
             return False
 
-        outputs = Blockchain.Default().GetAllUnspent(tx.Hash)
+        outputs = Blockchain.GetInstance().GetAllUnspent(tx.Hash)
         if len(outputs) > ApplicationEngine.maxArraySize:
             return False
 
@@ -998,7 +1002,7 @@ class StateReader(InteropService):
             tx_hash = engine.ScriptContainer.Hash
 
         self.events_to_dispatch.append(SmartContractEvent(SmartContractEvent.STORAGE_GET, ContractParameter(ContractParameterType.String, value='%s -> %s' % (keystr, valStr)),
-                                                          context.ScriptHash, Blockchain.Default().Height + 1, tx_hash, test_mode=engine.testMode))
+                                                          context.ScriptHash, Blockchain.GetInstance().Height + 1, tx_hash, test_mode=engine.testMode))
 
         return True
 
