@@ -558,7 +558,7 @@ class ApplicationEngine(ExecutionEngine):
         from neocore.Core.Contract.StateMachine import StateMachine
         from neocore.EventHub import events
 
-        bc = Blockchain.GetInstance()
+        bc = Blockchain.Default()
 
         accounts = bc.nodeServices.dbService.getAccountsCollection()
         assets = bc.nodeServices.dbService.getAssetsCollection()

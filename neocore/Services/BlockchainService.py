@@ -217,7 +217,7 @@ class NodeService(BlockchainService):
 
         for hash, group in groupby(inputs, lambda x: x.PrevHash):
             from neocore.Core.Blockchain import Blockchain
-            tx, height_start = Blockchain.GetInstance().GetTransaction(hash)
+            tx, height_start = Blockchain.Default().GetTransaction(hash)
 
             if tx is None:
                 raise Exception("Could Not calculate bonus")
@@ -268,7 +268,7 @@ class NodeService(BlockchainService):
 
             endamount = self.GetSysFeeAmountByHeight(coinheight.end - 1)
             from neocore.Core.Blockchain import Blockchain
-            startamount = 0 if coinheight.start == 0 else Blockchain.GetInstance().GetSysFeeAmountByHeight(
+            startamount = 0 if coinheight.start == 0 else Blockchain.Default().GetSysFeeAmountByHeight(
                 coinheight.start - 1)
             amount += endamount - startamount
 

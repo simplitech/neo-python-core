@@ -26,7 +26,7 @@ script:
 # now test the upstream neo-python dev branch with the current neocore code
 - git clone https://github.com/CityOfZion/neo-python.git
 - cd neo-python
-- git checkout origin/development -b development
+- git checkout origin/development -b developmenRt
 - pip install -e .
 - yes | pip uninstall neocore neo-boa
 - pip install git+https://github.com/CityOfZion/neo-boa@development

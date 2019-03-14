@@ -163,7 +163,7 @@ class StateMachine(StateReader):
             asset_id=tx.Hash, asset_type=asset_type, name=name, amount=amount,
             available=Fixed8.Zero(), precision=precision, fee_mode=0, fee=Fixed8.Zero(),
             fee_addr=UInt160(), owner=owner, admin=admin, issuer=issuer,
-            expiration=Blockchain.GetInstance().Height + 1 + 2000000, is_frozen=False
+            expiration=Blockchain.Default().Height + 1 + 2000000, is_frozen=False
         )
 
         asset = self._assets.ReplaceOrAdd(tx.Hash.ToBytes(), new_asset)
@@ -186,8 +186,8 @@ class StateMachine(StateReader):
 
         asset = self._assets.GetAndChange(current_asset.AssetId.ToBytes())
 
-        if asset.Expiration < Blockchain.GetInstance().Height + 1:
-            asset.Expiration = Blockchain.GetInstance().Height + 1
+        if asset.Expiration < Blockchain.Default().Height + 1:
+            asset.Expiration = Blockchain.Default().Height + 1
 
         try:
 
@@ -256,7 +256,7 @@ class StateMachine(StateReader):
 
         self.events_to_dispatch.append(
             SmartContractEvent(SmartContractEvent.CONTRACT_CREATED, ContractParameter(ContractParameterType.InteropInterface, contract),
-                               hash, Blockchain.GetInstance().Height + 1,
+                               hash, Blockchain.Default().Height + 1,
                                engine.ScriptContainer.Hash if engine.ScriptContainer else None,
                                test_mode=engine.testMode))
         return True
@@ -324,7 +324,7 @@ class StateMachine(StateReader):
 
         self.events_to_dispatch.append(
             SmartContractEvent(SmartContractEvent.CONTRACT_MIGRATED, ContractParameter(ContractParameterType.InteropInterface, contract),
-                               hash, Blockchain.GetInstance().Height + 1,
+                               hash, Blockchain.Default().Height + 1,
                                engine.ScriptContainer.Hash if engine.ScriptContainer else None,
                                test_mode=engine.testMode))
 
@@ -364,7 +364,7 @@ class StateMachine(StateReader):
 
         self.events_to_dispatch.append(
             SmartContractEvent(SmartContractEvent.CONTRACT_DESTROY, ContractParameter(ContractParameterType.InteropInterface, contract),
-                               hash, Blockchain.GetInstance().Height + 1,
+                               hash, Blockchain.Default().Height + 1,
                                engine.ScriptContainer.Hash if engine.ScriptContainer else None,
                                test_mode=engine.testMode))
         return True
@@ -405,7 +405,7 @@ class StateMachine(StateReader):
 
         self.events_to_dispatch.append(
             SmartContractEvent(SmartContractEvent.STORAGE_PUT, ContractParameter(ContractParameterType.String, '%s -> %s' % (keystr, valStr)),
-                               context.ScriptHash, Blockchain.GetInstance().Height + 1,
+                               context.ScriptHash, Blockchain.Default().Height + 1,
                                engine.ScriptContainer.Hash if engine.ScriptContainer else None,
                                test_mode=engine.testMode))
 
@@ -427,7 +427,7 @@ class StateMachine(StateReader):
             keystr = Crypto.ToAddress(UInt160(data=key))
 
         self.events_to_dispatch.append(SmartContractEvent(SmartContractEvent.STORAGE_DELETE, ContractParameter(ContractParameterType.String, keystr),
-                                                          context.ScriptHash, Blockchain.GetInstance().Height + 1,
+                                                          context.ScriptHash, Blockchain.Default().Height + 1,
                                                           engine.ScriptContainer.Hash if engine.ScriptContainer else None,
                                                           test_mode=engine.testMode))
 

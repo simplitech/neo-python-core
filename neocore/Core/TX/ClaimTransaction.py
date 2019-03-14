@@ -79,7 +79,7 @@ class ClaimTransaction(Transaction):
         hashes = super(ClaimTransaction, self).GetScriptHashesForVerifying()
 
         for hash, group in groupby(self.Claims, lambda x: x.PrevHash):
-            tx, height = Blockchain.GetInstance().GetTransaction(hash)
+            tx, height = Blockchain.Default().GetTransaction(hash)
 
             if tx is None:
                 raise Exception("Invalid Claim Operation")

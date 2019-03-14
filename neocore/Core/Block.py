@@ -225,7 +225,7 @@ class Block(BlockBase, InventoryMixin):
         block.Script = witness
 
         from neocore.Core.Blockchain import Blockchain
-        bc = Blockchain.GetInstance()
+        bc = Blockchain.Default()
         tx_list = []
         for tx_hash in reader.ReadHashes():
             tx = bc.GetTransaction(tx_hash)[0]

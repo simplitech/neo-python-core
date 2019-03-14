@@ -110,7 +110,7 @@ class Blockchain:
         return self.blockchainServices.GetVotes(transactions)
 
     @staticmethod
-    def GetInstance() -> 'Blockchain':
+    def Default() -> 'Blockchain':
         """
         Get the default registered blockchain instance.
 
